@@ -14,8 +14,11 @@ import Jogo.Jogo;
  * Obs: Os testes que necessitam verificar um double não serão feitos
  * porque o Eclipse está informando que o metodo Assert para double está
  * descontinuada ocasionando erros e atrapalahndo testar outros metodos.
+ * Os testes que necessitam da utilização de dados orindos de arquivo
+ * forma testados de acordo com os arquivos que estao no diretorio
  *
  */
+
 public class JogoTest {
 
 	@Test

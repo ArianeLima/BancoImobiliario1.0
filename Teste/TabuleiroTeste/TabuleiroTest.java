@@ -9,7 +9,13 @@ import Imoveis.Hotel;
 import Imoveis.PasseVez;
 import Imoveis.Start;
 import Tabuleiro.Tabuleiro;
-
+/**
+ * 
+ * @author Ariane e Jean
+ * Os testes que necessitam da utilização de dados orindos de arquivo
+ * forma testados de acordo com os arquivos que estao no diretorio
+ *
+ */
 public class TabuleiroTest {
 
 	@Test
