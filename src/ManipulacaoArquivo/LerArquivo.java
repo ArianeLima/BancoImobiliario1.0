@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 /**
  *
- * @author User
+ * @author Ariane e Jean
  * A classe LerArquivo representa a leitura de arquivos
  * de texto. O atributo file refere-se ao arquivo que deve
  * ser lido. Já o atributo dadosArquivo são as informações 
@@ -118,7 +118,9 @@ public class LerArquivo {
 
 		return novo;
 	}
-	//faz a leitura do arquivo completo com as separacoes do arquivo jogada
+	/**
+	 * faz a leitura do arquivo completo com as separacoes do arquivo jogada
+	 */
 	private void criaListaDadosdoArquivoJogadas() {
 		int i;
 		List<String> dataFile = leituraDados();

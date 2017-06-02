@@ -2,10 +2,15 @@ package Jogo;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import Excessões.PertenceAJogador;
 import Imoveis.Imovel;
 import Jogadores.GerarJogadores;
 import Jogadores.Jogador;
+import ManipulacaoArquivo.EscreverArquivo;
 import ManipulacaoArquivo.LerArquivo;
 import Tabuleiro.*;
 /**
@@ -18,6 +23,8 @@ import Tabuleiro.*;
 public class Jogo {
 	private Tabuleiro tab_;
 	private ArrayList<Jogador> jogadores_ = new ArrayList<Jogador>();
+	private int rodadas;
+	private static final Logger LOGGER = Logger.getLogger( Jogo.class.getName() );
 	/**Funçao que inicia o novo jogo, faz a criação e a geração de 
 	 * um tabuleiro, gera os jogadores e realiza as jogadas. 
 	 */
@@ -25,33 +32,35 @@ public class Jogo {
 		this.tab_ = new Tabuleiro();
 		this.tab_.gerarTabuleiro();
 		this.tab_.criaListaJogadores();
-		//this.tab_.imprimeTabuleiro();
 		File file = new File("jogadas4.txt");
 		LerArquivo leituraJogadas = new LerArquivo(file, 0);
 		GerarJogadores gerar = new GerarJogadores(Integer.parseInt(leituraJogadas.getDadosArquivo().get(0).get(1)),(double)Integer.parseInt(leituraJogadas.getDadosArquivo().get(0).get(2)));
 		this.jogadores_ = gerar.cadastraJogadores();
-		/*for(int i = 0; i < this.jogadores_.size(); i++){
-			System.out.println("Nome: "+jogadores_.get(i).getNome()+" Ordem " + jogadores_.get(i).getOrdemJogada()+
-					" Posicao"+jogadores_.get(i).getPosicao()+" Dinheiro "+jogadores_.get(i).getBanco());
-		}*/
+
 		/**
 		 * For que controla as linhas
 		 */
 		for (int i = 1; i <leituraJogadas.getDadosArquivo().size(); i++) {
+			LOGGER.log( Level.FINE, "processando {0} entradas no loop", leituraJogadas.getDadosArquivo().size() );
 			/**
-			 * Verifica se a proxima linha possui o comando DUMP o qual significa fim de jogo 
+			 * Verifica se a proxima linha possui o comando DUMP ou se existe apenas 1 jogador no jogo o que significa fim de jogo 
 			 */
-			if(leituraJogadas.getDadosArquivo().get(i).get(0) != "DUMP"){
+			
+			if(leituraJogadas.getDadosArquivo().get(i).get(0) != "DUMP"||this.checaFim()){
 				/**
 				 * For que controla as colunas
 				 */
+				this.rodadas++;
 				for (int j = 1; j < leituraJogadas.getDadosArquivo().get(i).size(); j++) {
+					LOGGER.log( Level.FINER, "processing[{0}]: {1}", new Object[]{ j, leituraJogadas.getDadosArquivo().get(j) } );
 					/**
 					 * For que passa por todos os jogadores e o if verifica se o jogador 
 					 * que está no for é o que deve realizar a jogada e se esse jogador 
 					 * ainda não faliu
 					 */
+					
 					for(int k = 0; k < gerar.getQuantidadeJogadores(); k++){
+						
 						if(this.jogadores_.get(k).getOrdemJogada() == Integer.parseInt(leituraJogadas.getDadosArquivo().get(i).get(j))&&this.jogadores_.get(k).isFaliu()==false){
 							j++;
 							int posicaoAnterior = jogadores_.get(k).getPosicao();
@@ -68,7 +77,16 @@ public class Jogo {
 							 *  
 							 */
 							if(this.tab_.getListaJogadores().get(this.jogadores_.get(k).getPosicao()).getNome()== "banco"){
-								this.jogadores_.set(k, comprarImovel(this.jogadores_.get(k)));
+								Jogador aux;
+								try{
+									aux = comprarImovel(this.jogadores_.get(k));
+									this.jogadores_.set(k, aux);
+								}catch(PertenceAJogador x){
+									LOGGER.log( Level.SEVERE, x.toString(), x );
+									x.printmsg();
+									x.printStackTrace();
+								}
+								
 							}
 							else if(this.tab_.getListaImoveis().get(this.jogadores_.get(k).getPosicao()).getNome() == "Start"){
 								
@@ -98,30 +116,29 @@ public class Jogo {
 						} 
 						
 					}
-					for(int a = 0; a < this.jogadores_.size(); a++){
-						System.out.println("Nome: "+jogadores_.get(a).getNome()+" Ordem " + jogadores_.get(a).getOrdemJogada()+
-								" Posicao"+jogadores_.get(a).getPosicao()+" Dinheiro "+jogadores_.get(a).getBanco() +
-								" Aluguel Pago "+ jogadores_.get(a).getAluguelPago() + " Aluguel Rec " +jogadores_.get(a).getAluguel()
-								+" Voltas "+ jogadores_.get(a).getVoltas() + " Compras "+jogadores_.get(a).getGastouCompras()
-								+" Passe "+jogadores_.get(a).getPasseVez());
-						System.out.println("\n");
-					}
+					
 				}
 				
 			}
+			
 		}
 	}
+	
+	/**
+	 *retorna false caso esteja sobrando apenas 1 jogador no jogo 
+	 *@return
+	 */
 	public boolean checaFim(){
-		int x = 0;
-		for(int i = 0; i<this.jogadores_.size(); i++){
-			if(this.jogadores_.get(i).getOrdemJogada()<0){
-				x++;
-			}
+		int count = 0;
+		for (int i = 0; i<this.jogadores_.size();i++){
+			if(jogadores_.get(i).isFaliu())
+				count++;
 		}
-		if(x==this.jogadores_.size()-1){
-			return true;
+		if(count ==this.jogadores_.size()-1 ){
+			return false;
 		}
-		return false;
+		return true;
+		
 	}
 	/**
 	 * Funçao que mostra a lista de imoveis adquiridos por
@@ -135,51 +152,81 @@ public class Jogo {
 		}
 	}
 	
-	public boolean falirJogador(Jogador jog){
-		if(jog.getBanco()<=0){
-			if(jog.getOrdemJogada()>=0){
-				for(int i = 0 ; i < this.tab_.getTamanho(); i++){
-					if(this.tab_.getListaJogadores().get(i).equals(jog)){
-						this.tab_.getListaJogadores().set(i, new Jogador("banco", -1));
-					}
-				}
-				System.out.println("Jogador" + (jog.getOrdemJogada()+1) + ": Faliu!!");
-				jog.setOrdemJogada(jog.getOrdemJogada()-6);
-				return true;
-			}
-		}
-		return false;
-
-	}
-	
+	/**
+	 * função que prepara as informações em uma lista de strings para serem escritas
+	 * no arquivo de estatísticas
+	 */
 	public void gameOver(){
-		int aux = 0;
-		for(int i = 0; i < this.jogadores_.size() ; i++){
-			System.out.println("Jogador " + this.jogadores_.get(i).getNome());
-			System.out.println("Saldo Final: $" + this.jogadores_.get(i).getBanco());
-			System.out.println("Aluguel Arrecadado: $" + this.jogadores_.get(i).getAluguel());
-			System.out.println("Aluguel Pago: $" + this.jogadores_.get(i).getAluguelPago());
-			if ( aux<this.jogadores_.get(i).getPosicao()){
-				aux = this.jogadores_.get(i).getPosicao();
-				
+		List<String> escrita = new ArrayList<String>();
+		String aux = new String();
+		escrita.add("1:" + this.rodadas/this.jogadores_.size());
+		aux = "2:";
+		for(int i = 0;i<this.jogadores_.size();i++){
+			aux += "" + i +"-"+ this.jogadores_.get(i).getVoltas();
+			if(i!=this.jogadores_.size()-1){
+				aux+=";";
 			}
-			System.out.println("Lista de Imoveis Adiquiridos:");
-			for(int j = 0; j<this.jogadores_.get(i).getImoveis().size() ; j++){
-				System.out.println(this.jogadores_.get(i).getImoveis().get(j).getNome());
-			}
-			System.out.println("#######################################################");
 		}
-		System.out.println("Numero de voltas dadas no tabuleiro: " + aux/this.tab_.getTamanho() );
-			
+		escrita.add(aux);
+		aux = "3:";
+		for(int i = 0;i<this.jogadores_.size();i++){
+			aux += "" + i +"-"+ this.jogadores_.get(i).getBanco();
+			if(i!=this.jogadores_.size()-1){
+				aux+=";";
+			}
+		}
+		escrita.add(aux);
+		aux = "4:";
+		for(int i = 0;i<this.jogadores_.size();i++){
+			aux += "" + i +"-"+ this.jogadores_.get(i).getAluguel();
+			if(i!=this.jogadores_.size()-1){
+				aux+=";";
+			}
+		}
+		escrita.add(aux);
+		aux = "5:";
+		for(int i = 0;i<this.jogadores_.size();i++){
+			aux += "" + i +"-"+ this.jogadores_.get(i).getAluguelPago();
+			if(i!=this.jogadores_.size()-1){
+				aux+=";";
+			}
+		}
+		escrita.add(aux);
+		aux = "6:";
+		for(int i = 0;i<this.jogadores_.size();i++){
+			aux += "" + i +"-"+ this.jogadores_.get(i).getGastouCompras();
+			if(i!=this.jogadores_.size()-1){
+				aux+=";";
+			}
+		}
+		escrita.add(aux);
+		aux = "7:";
+		for(int i = 0;i<this.jogadores_.size();i++){
+			aux += "" + i +"-"+ this.jogadores_.get(i).getPasseVez();
+			if(i!=this.jogadores_.size()-1){
+				aux+=";";
+			}
+		}
+		escrita.add(aux);
+		
+		
+		EscreverArquivo escrever = new EscreverArquivo(new File("estatisticas.txt"));
+		escrever.escreveDados(escrita);
 	}
 	/**
 	 * Função que compra o imovel em que está na posição
 	 * que o jogador parou. Retira do jogador o valor de compra
-	 * do imovel e acrscenta o valor da compra no atributo GastouCompras
+	 * do imovel e acrescenta o valor da compra no atributo GastouCompras
 	 * @param jog
 	 * @return
+	 * @throws PertenceAJogador 
 	 */
-	public Jogador comprarImovel(Jogador jog){
+	public Jogador comprarImovel(Jogador jog) throws PertenceAJogador{
+		if(!this.tab_.getListaJogadores().get(jog.getPosicao()).getNome().equals("banco")){
+			PertenceAJogador x = new PertenceAJogador();
+			throw x;
+			
+		}else{
 			jog.setBanco((jog.getBanco() - this.tab_.getListaImoveis().get(jog.getPosicao()).getValor()));
 			jog.setGastouCompras(jog.getGastouCompras()+this.tab_.getListaImoveis().get(jog.getPosicao()).getValor());
 			this.tab_.setListaJogadores(jog);;
@@ -187,6 +234,7 @@ public class Jogo {
 			imovel.add(this.tab_.getListaImoveis().get(jog.getPosicao()));
 			jog.setImoveis(imovel);
 			return jog;
+		}
 	}
 	/**
 	 * Função que em que um jogador paga o aluguel por ter parado em posicao que possui
@@ -199,7 +247,7 @@ public class Jogo {
 		/**O primeiro if verifica se o imovel não é do jogador para que ele possa pagar o aluguel, então retira
 		 * do dinheito acumulado o valor do aluguel e acrescenta na variavel que guarda o valor de alugueis
 		 * pagos o valor da taxa do imovel que está na posicao que ele parou. Além disso soma o aluguel no valor
-		 * do dono do imovel.		 * 
+		 * do dono do imovel.
 		 */
 		if(!this.tab_.getListaJogadores().get(jog.getPosicao() % this.tab_.getTamanho()).equals(jog)){
 			jog.setBanco((jog.getBanco() - this.tab_.getListaImoveis().get(jog.getPosicao()).getTaxa()));
@@ -211,9 +259,6 @@ public class Jogo {
 			}
 		}
 		return jog;
-	}
-	public ArrayList<Jogador> getJogadores_() {
-		return jogadores_;
 	}
 
 }

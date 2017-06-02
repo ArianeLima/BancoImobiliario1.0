@@ -6,13 +6,26 @@ import java.util.ArrayList;
 import Imoveis.*;
 import Jogadores.Jogador;
 import ManipulacaoArquivo.LerArquivo;
-
+/**
+ * 
+ * @author Ariane e Jean
+ * A classe Tabuleiro como nome proprio diz representa o 
+ * tabuleiro do jogo. O atributo tamanho refere-se ao tamanho do tabuleiro
+ * Os arrayLists de Imovel e de Jogador representam respectivamente
+ * a lista de imoveis presentes em cada posição e a lista de jogadores que
+ * são proprietários de cada imovel
+ *
+ */
 public class Tabuleiro {
 	private int tamanho;
 	private ArrayList<Imovel> listaImoveis = new ArrayList<Imovel>();
 	private ArrayList<Jogador> listaJogadores = new ArrayList<Jogador>();
 	
-
+/**
+ * Funçao que inicializa o ArrayList<Jogador> com o jogador 
+ * banco. As unicas posiçoes do tabuleiro que não são inicializadas
+ * com o banco é o Start e o Passe a vez. Esses são inicializados Sem Jogador
+ */
 	public void criaListaJogadores(){
 		Jogador banco = new Jogador("banco", 10000000);
 		Jogador semJogador = new Jogador("Sem jogador",0);
@@ -25,6 +38,10 @@ public class Tabuleiro {
 				this.listaJogadores.add(semJogador);
 			}
 	}
+	/**
+	 * Funçao que gera o tabuleiro de acordo com informações presentes 
+	 * em um arquivo de texto
+	 */
 	public void gerarTabuleiro(){
 		File file = new File("tabuleiro1.txt");
 		LerArquivo leitura = new LerArquivo(file, 1);
@@ -114,6 +131,9 @@ public class Tabuleiro {
 	public void setListaJogadores(ArrayList<Jogador> listaJogadores) {
 		this.listaJogadores = listaJogadores;
 	}
+	/**
+	 * Função que imprime o tabuleiro completo
+	 */
 	public void imprimeTabuleiro(){
 		int i;
 		
